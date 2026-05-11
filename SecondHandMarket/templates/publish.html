@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}发布商品 - 中古·回想{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h1>发布商品</h1>
+            <p>填写商品信息，让闲置物品找到新主人</p>
+        </div>
+        
+        <form id="publishForm" action="{{ url_for('items.publish') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="title">商品标题 <span class="required">*</span></label>
+                <input type="text" id="title" name="title" class="form-control" 
+                       placeholder="请输入商品标题，如：iPhone 13 128G 国行" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="price">价格 <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-prefix">¥</span>
+                        <input type="number" id="price" name="price" class="form-control" 
+                               placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                </div>
+                
+                <div class="form-group half">
+                    <label for="category">分类 <span class="required">*</span></label>
+                    <select id="category" name="category" class="form-control" required>
+                        <option value="">请选择分类</option>
+                        <option value="electronics">数码电子</option>
+                        <option value="books">图书教材</option>
+                        <option value="clothes">服装鞋帽</option>
+                        <option value="furniture">家具家居</option>
+                        <option value="sports">运动户外</option>
+                        <option value="others">其他</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="brand">品牌</label>
+                    <input type="text" id="brand" name="brand" class="form-control" 
+                           placeholder="如：Apple、Nike">
+                </div>
+                
+                <div class="form-group half">
+                    <label for="model">型号</label>
+                    <input type="text" id="model" name="model" class="form-control" 
+                           placeholder="如：iPhone 15 Pro">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="purchase_time">购买时间</label>
+                    <input type="date" id="purchase_time" name="purchase_time" class="form-control">
+                </div>
+                
+                <div class="form-group half">
+                    <label for="purchase_source">购买来源</label>
+                    <input type="text" id="purchase_source" name="purchase_source" class="form-control" 
+                           placeholder="如：官网、京东、实体店">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">交易地点</label>
+                <input type="text" id="location" name="location" class="form-control" 
+                       placeholder="如：北京市海淀区">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">商品描述 <span class="required">*</span></label>
+                <textarea id="description" name="description" class="form-control" rows="6" 
+                          placeholder="请详细描述商品的品牌、型号、新旧程度、购买时间、使用情况等信息..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>商品图片</label>
+                <div class="image-upload" id="imageUpload">
+                    <input type="file" id="image" name="image" accept="image/*" 
+                           onchange="previewImage(this)">
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>点击上传图片</p>
+                        <span>支持 JPG、PNG 格式</span>
+                    </div>
+                    <img id="imagePreview" class="image-preview" style="display: none;">
+                    <button type="button" class="remove-image" id="removeImage" 
+                            onclick="removeImage()" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>联系方式（选填）</h3>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="contact_phone">手机号码</label>
+                        <input type="tel" id="contact_phone" name="contact_phone" 
+                               class="form-control" placeholder="138xxxx">
+                    </div>
+                    <div class="form-group half">
+                        <label for="contact_wechat">微信号</label>
+                        <input type="text" id="contact_wechat" name="contact_wechat" 
+                               class="form-control" placeholder="微信号">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">
+                    <i class="fas fa-paper-plane"></i> 发布商品
+                </button>
+                <a href="{{ url_for('items.index') }}" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(input) {
+    const file = input.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+            document.getElementById('uploadPlaceholder').style.display = 'none';
+            document.getElementById('removeImage').style.display = 'flex';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeImage() {
+    document.getElementById('image').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('uploadPlaceholder').style.display = 'flex';
+    document.getElementById('removeImage').style.display = 'none';
+}
+
+// 拖拽上传
+document.getElementById('imageUpload').addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+});
+
+document.getElementById('imageUpload').addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+});
+
+document.getElementById('imageUpload').addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        document.getElementById('image').files = files;
+        previewImage(document.getElementById('image'));
+    }
+});
+
+// 表单验证
+document.getElementById('publishForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const price = document.getElementById('price').value;
+    const category = document.getElementById('category').value;
+    const description = document.getElementById('description').value.trim();
+    
+    if (!title || !price || !category || !description) {
+        e.preventDefault();
+        alert('请填写所有必填项');
+        return false;
+    }
+    
+    if (price < 0) {
+        e.preventDefault();
+        alert('价格不能为负数');
+        return false;
+    }
+});
+</script>
+{% endblock %}

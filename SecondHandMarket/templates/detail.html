@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} - 中古·回想{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('items.index') }}">首页</a>
+        <span>/</span>
+        <a href="?category={{ item.category }}">{{ item.category }}</a>
+        <span>/</span>
+        <span>{{ item.title }}</span>
+    </div>
+    
+    <div class="detail-container">
+        <!-- 商品图片 -->
+        <div class="detail-gallery">
+            <div class="main-image">
+                {% if item.image %}
+                    <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.title }}" id="mainImage">
+                {% else %}
+                    <div class="placeholder-image large">
+                        <i class="fas fa-image"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 商品信息 -->
+        <div class="detail-info">
+            <h1 class="detail-title">{{ item.title }}</h1>
+            
+            <div class="detail-meta">
+                <div class="meta-item">
+                    <i class="fas fa-tag"></i>
+                    <span>分类：{{ item.category }}</span>
+                </div>
+                {% if item.brand %}
+                <div class="meta-item">
+                    <i class="fas fa-copyright"></i>
+                    <span>品牌：{{ item.brand }}</span>
+                </div>
+                {% endif %}
+                {% if item.model %}
+                <div class="meta-item">
+                    <i class="fas fa-barcode"></i>
+                    <span>型号：{{ item.model }}</span>
+                </div>
+                {% endif %}
+                {% if item.purchase_time %}
+                <div class="meta-item">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>购买时间：{{ item.purchase_time }}</span>
+                </div>
+                {% endif %}
+                {% if item.purchase_source %}
+                <div class="meta-item">
+                    <i class="fas fa-store"></i>
+                    <span>购买来源：{{ item.purchase_source }}</span>
+                </div>
+                {% endif %}
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>发布时间：{{ item.created_at }}</span>
+                </div>
+            </div>
+            
+            <div class="detail-description">
+                <h3>商品描述</h3>
+                <p>{{ item.description }}</p>
+            </div>
+            
+            <div class="detail-actions">
+                {% if session.get('user_id') == item.seller_id %}
+                    <a href="{{ url_for('items.edit_item', item_id=item.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> 编辑
+                    </a>
+                    <button onclick="deleteItem({{ item.id }})" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> 删除
+                    </button>
+                {% else %}
+                    <button onclick="contactSeller()" class="btn btn-primary btn-large">
+                        <i class="fas fa-comment"></i> 联系卖家
+                    </button>
+                    <button onclick="addToFavorites({{ item.id }})" class="btn btn-secondary btn-large">
+                        <i class="fas fa-heart"></i> 收藏
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 卖家信息 -->
+    <div class="seller-card">
+        <div class="seller-header">
+            <h3>卖家信息</h3>
+        </div>
+        <div class="seller-info">
+            <div class="seller-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="seller-details">
+                <h4>{{ item.seller_name }}</h4>
+                {% if item.seller_bio %}
+                <p class="seller-bio">{{ item.seller_bio }}</p>
+                {% endif %}
+                <p class="seller-stats">
+                    <span>发布商品：{{ item.seller_items_count or 0 }}件</span>
+                    <span>注册时间：{{ item.seller_joined or '未知' }}</span>
+                </p>
+            </div>
+            <a href="{{ url_for('items.user_items', user_id=item.seller_id) }}" class="btn btn-outline">
+                查看TA的主页
+            </a>
+        </div>
+    </div>
+    
+    <!-- 相关推荐 -->
+    {% if related_items %}
+    <div class="related-section">
+        <h3 class="section-title">相关推荐</h3>
+        <div class="products-grid small">
+            {% for related in related_items %}
+            <div class="product-card">
+                <a href="{{ url_for('items.item_detail', item_id=related.id) }}">
+                    <div class="product-image">
+                        {% if related.image %}
+                            <img src="{{ url_for('static', filename='images/' + related.image) }}" alt="{{ related.title }}">
+                        {% else %}
+                            <div class="placeholder-image">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">{{ related.title }}</h3>
+                        <div class="product-footer">
+                            <span class="product-price">¥{{ related.price }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 联系卖家弹窗 -->
+<div class="modal" id="contactModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>联系卖家</h3>
+            <button onclick="closeModal()" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="contact-info">
+                <p><i class="fas fa-user"></i> 卖家：{{ item.seller_name }}</p>
+                {% if item.contact_phone %}
+                <p><i class="fas fa-phone"></i> 电话：{{ item.contact_phone }}</p>
+                {% endif %}
+                {% if item.contact_wechat %}
+                <p><i class="fab fa-weixin"></i> 微信：{{ item.contact_wechat }}</p>
+                {% endif %}
+            </div>
+            <form id="messageForm">
+                <div class="form-group">
+                    <label>留言内容</label>
+                    <textarea class="form-control" rows="4" placeholder="您好，我对这个商品很感兴趣..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">发送留言</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function contactSeller() {
+    document.getElementById('contactModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('contactModal').style.display = 'none';
+}
+
+function addToFavorites(itemId) {
+    fetch('/api/favorites', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ item_id: itemId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('收藏成功！');
+        } else {
+            alert(data.message || '收藏失败');
+        }
+    });
+}
+
+function deleteItem(itemId) {
+    if (confirm('确定要删除这个商品吗？')) {
+        fetch('/api/items/' + itemId, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                alert(data.message || '删除失败');
+            }
+        });
+    }
+}
+
+// 点击弹窗外部关闭
+document.getElementById('contactModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}

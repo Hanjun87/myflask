@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 中古·回想{% endblock %}
+
+{% block content %}
+<!-- 轮播图/横幅 -->
+<section class="hero-banner">
+    <div class="hero-slider">
+        <div class="hero-slide active">
+            <div class="hero-content">
+                <h1>旧物有余温</h1>
+                <p>在时光流转中，寻找属于你的记忆碎片</p>
+                <a href="{{ url_for('items.publish') }}" class="btn btn-primary">立即发布</a>
+            </div>
+        </div>
+        <div class="hero-slide">
+            <div class="hero-content">
+                <h1>高端奢品</h1>
+                <p>甄选全球顶级好物，品味非凡生活</p>
+                <a href="{{ url_for('items.index') }}" class="btn btn-primary">探索精选</a>
+            </div>
+        </div>
+        <div class="hero-slide">
+            <div class="hero-content">
+                <h1>品质保障</h1>
+                <p>严格甄选每一件商品，让交易更安心</p>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">加入我们</a>
+            </div>
+        </div>
+    </div>
+    <div class="hero-dots">
+        <span class="dot active" onclick="goToSlide(0)"></span>
+        <span class="dot" onclick="goToSlide(1)"></span>
+        <span class="dot" onclick="goToSlide(2)"></span>
+    </div>
+    <button class="hero-nav prev" onclick="changeSlide(-1)">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+    <button class="hero-nav next" onclick="changeSlide(1)">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+</section>
+
+<!-- 商品分类与列表 -->
+<section class="products-section">
+    <div class="container">
+        <!-- 分类导航 -->
+        <div class="category-nav" id="categoryNav">
+            <div class="category-nav-indicator" id="categoryIndicator"></div>
+            <a href="javascript:void(0)" class="category-tab {% if not current_category %}active{% endif %}" data-category="all" onclick="filterCategory('all')">
+                <i class="fas fa-th-large"></i>
+                <span>全部</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'electronics' %}active{% endif %}" data-category="electronics" onclick="filterCategory('electronics')">
+                <i class="fas fa-laptop"></i>
+                <span>数码电子</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'books' %}active{% endif %}" data-category="books" onclick="filterCategory('books')">
+                <i class="fas fa-book"></i>
+                <span>图书教材</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'clothes' %}active{% endif %}" data-category="clothes" onclick="filterCategory('clothes')">
+                <i class="fas fa-tshirt"></i>
+                <span>服装鞋帽</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'furniture' %}active{% endif %}" data-category="furniture" onclick="filterCategory('furniture')">
+                <i class="fas fa-couch"></i>
+                <span>家具家居</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'sports' %}active{% endif %}" data-category="sports" onclick="filterCategory('sports')">
+                <i class="fas fa-basketball-ball"></i>
+                <span>运动户外</span>
+            </a>
+            <a href="javascript:void(0)" class="category-tab {% if current_category == 'others' %}active{% endif %}" data-category="others" onclick="filterCategory('others')">
+                <i class="fas fa-gem"></i>
+                <span>其他</span>
+            </a>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="section-header">
+            <div class="search-box product-search">
+                <input type="text" placeholder="搜索商品..." id="searchInput" onkeypress="if(event.key==='Enter') search()">
+                <button onclick="search()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div class="filter-options">
+                <div class="custom-select-wrapper">
+                    <div class="custom-select" id="customSortSelect">
+                        <div class="custom-select-trigger">
+                            <span class="select-text">最新发布</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-options">
+                            <div class="custom-option {% if current_sort == 'newest' %}selected{% endif %}" data-value="newest">
+                                <i class="fas fa-clock"></i>
+                                <span>最新发布</span>
+                            </div>
+                            <div class="custom-option {% if current_sort == 'price_asc' %}selected{% endif %}" data-value="price_asc">
+                                <i class="fas fa-sort-amount-up"></i>
+                                <span>价格从低到高</span>
+                            </div>
+                            <div class="custom-option {% if current_sort == 'price_desc' %}selected{% endif %}" data-value="price_desc">
+                                <i class="fas fa-sort-amount-down"></i>
+                                <span>价格从高到低</span>
+                            </div>
+                        </div>
+                    </div>
+                    <select id="sortSelect" style="display: none;">
+                        <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>最新发布</option>
+                        <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>价格从低到高</option>
+                        <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>价格从高到低</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品网格 -->
+        <div class="products-grid" id="productsGrid">
+            {% for item in items %}
+            <div class="product-card" data-category="{{ item.category }}">
+                <a href="{{ url_for('items.item_detail', item_id=item.id) }}">
+                    <div class="product-image">
+                        {% if item.image %}
+                            <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.title }}">
+                        {% else %}
+                            <div class="placeholder-image">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">{{ item.title }}</h3>
+                        <p class="product-description">{{ item.description[:50] }}...</p>
+                        <div class="product-footer">
+                            <span class="product-price">¥{{ item.price }}</span>
+                            <span class="product-time">{{ item.created_at }}</span>
+                        </div>
+                        <div class="product-seller">
+                            <span>{{ item.seller_name }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>暂无商品，快来发布第一个吧！</p>
+                <a href="{{ url_for('items.publish') }}" class="btn btn-primary">发布商品</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 分页 -->
+        {% if pagination %}
+        <div class="pagination">
+            {% if pagination.has_prev %}
+                <a href="?page={{ pagination.prev_num }}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="page-link">上一页</a>
+            {% endif %}
+
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    {% if page != pagination.page %}
+                        <a href="?page={{ page }}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="page-link">{{ page }}</a>
+                    {% else %}
+                        <span class="page-link active">{{ page }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="page-link">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_num }}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="page-link">下一页</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
